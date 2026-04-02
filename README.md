@@ -47,7 +47,6 @@ python -m PyInstaller --noconsole --onefile --add-data "icon.ico;." --icon="icon
 ```powershell
 python -m PyInstaller --noconsole --onefile --add-data "icon.ico;." --add-binary "ffmpeg.exe;." --icon="icon.ico" main.py
 ```
-*(Note: Requires `_MEIPASS` logic implementation in the source code to locate the bundled FFmpeg.)*
 
 ---
 
@@ -95,4 +94,4 @@ python -m PyInstaller --noconsole --onefile --add-data "icon.ico;." --icon="icon
 ```powershell
 python -m PyInstaller --noconsole --onefile --add-data "icon.ico;." --add-binary "ffmpeg.exe;." --icon="icon.ico" main.py
 ```
-*(참고: 해당 방식으로 빌드 시 소스 코드 내에 `_MEIPASS`를 참조하여 FFmpeg 절대 경로를 찾는 로직이 구현되어 있어야 함.)*
+
