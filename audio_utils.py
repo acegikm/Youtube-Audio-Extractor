@@ -1,4 +1,4 @@
-import os
+import sys, os
 import re
 import wave
 import subprocess
@@ -7,6 +7,14 @@ from dataclasses import dataclass
 from typing import List, Optional, Callable
 import numpy as np
 import yt_dlp
+
+
+# (기존 import들 아래에 추가)
+def get_ffmpeg_path():
+    """ PyInstaller 가상 폴더에서 ffmpeg.exe 경로를 찾음 """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, 'ffmpeg.exe')
+    return 'ffmpeg'  # 파이썬으로 그냥 실행했을 땐 기본 시스템 환경변수 사용
 
 @dataclass
 class DownloadResult:
@@ -47,14 +55,14 @@ def get_audio_duration(wav_path: str) -> float:
 
 def convert_to_wav(input_path: str, output_path: str) -> str:
     cmd = [
-        "ffmpeg", "-y", "-i", input_path,
+        get_ffmpeg_path(), "-y", "-i", input_path,  # 💡 "ffmpeg" 대신 함수 호출
         "-ar", "48000", "-ac", "1", "-c:a", "pcm_s16le", output_path
     ]
-    
+
     # 윈도우 OS일 경우 콘솔창 숨김 플래그 적용
     creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
     
-    result = subprocess.run(cmd, capture_output=True, text=True, creationflags=creation_flags)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', creationflags=creation_flags)
     if result.returncode != 0:
         raise RuntimeError(f"WAV 변환 실패: {result.stderr}")
     return output_path
@@ -117,7 +125,7 @@ def download_youtube_audio(url: str, output_dir: str, progress_callback: Callabl
 
 def extract_segment(input_path: str, output_path: str, start_sec: float, end_sec: float) -> str:
     cmd = [
-        "ffmpeg", "-y", "-i", input_path,
+        get_ffmpeg_path(), "-y", "-i", input_path,  # 💡 "ffmpeg" 대신 함수 호출
         "-ss", str(start_sec), "-to", str(end_sec),
         "-c:a", "pcm_s16le", output_path
     ]
@@ -125,7 +133,7 @@ def extract_segment(input_path: str, output_path: str, start_sec: float, end_sec
     # 윈도우 OS일 경우 콘솔창 숨김 플래그 적용
     creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
     
-    result = subprocess.run(cmd, capture_output=True, text=True, creationflags=creation_flags)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', creationflags=creation_flags)
     if result.returncode != 0:
         raise RuntimeError(f"구간 추출 실패: {result.stderr}")
     return output_path

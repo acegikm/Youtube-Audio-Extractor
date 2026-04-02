@@ -15,6 +15,8 @@ from waveform_widget import WaveformWidget
 
 HISTORY_FILE = "history.json"
 
+VERSION = "v1.0"
+
 def resource_path(relative_path):
     """ PyInstaller 환경에서 절대 경로를 반환함 """
     if hasattr(sys, '_MEIPASS'):
@@ -39,7 +41,7 @@ class DownloadWorker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("YouTube Audio Extractor Pro v1.0")
+        self.setWindowTitle("YouTube Audio Extractor Pro " + VERSION)
         self.resize(1000, 400)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setWindowIcon(QIcon(resource_path("icon.ico")))
@@ -132,10 +134,12 @@ class MainWindow(QMainWindow):
         self.vol_slider.setFixedWidth(100)
         
         self.lbl_time = QLabel("00:00.000 ~ 00:00.000")
-        self.lbl_time.setStyleSheet("font-family: monospace; font-weight: bold; color: #444;")
+        self.lbl_time.setStyleSheet("font-weight: bold; color: #333;")
+        self.lbl_time.setAlignment(Qt.AlignmentFlag.AlignCenter) # 💡 추가: 텍스트 가운데 정렬
         
         self.btn_export = QPushButton(" Export Selection")
         self.btn_export.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
+
 
         for b in [self.btn_play_pause, self.btn_reset, self.btn_loop, self.btn_export]:
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -242,7 +246,13 @@ class MainWindow(QMainWindow):
             return f"{s // 60:02d}:{s % 60:02d}.{milis:03d}"
         
         dur = max(0, self.sel_end - self.sel_start)
-        self.lbl_time.setText(f"{fmt(self.sel_start)} ~ {fmt(self.sel_end)} ({fmt(dur)})")
+        time_str = f"{fmt(self.sel_start)} ~ {fmt(self.sel_end)} ({fmt(dur)})"
+        
+        # 💡 추가: 현재 로드된 영상 제목을 시간 정보 앞에 결합하여 표시
+        if self.current_res and self.current_res.title:
+            self.lbl_time.setText(f"🎵 {self.current_res.title}   |   {time_str}")
+        else:
+            self.lbl_time.setText(time_str)
 
     def on_zoom(self, z, ax):
         hbar = self.scroll.horizontalScrollBar()
@@ -258,6 +268,8 @@ class MainWindow(QMainWindow):
         url = self.url_combo.currentText().split(" (")[0].strip()
         if not url: return
         
+        self.last_url = url # 💡 추가: 다운로드한 주소를 변수에 임시 저장
+        
         self.btn_dl.setEnabled(False)
         self.pbar.setValue(0)
         self.pbar.show()
@@ -267,7 +279,7 @@ class MainWindow(QMainWindow):
         self.worker.progress.connect(self.pbar.setValue)
         self.worker.finished.connect(self.on_dl_fin)
         self.worker.start()
-
+        
     def on_dl_fin(self, res):
         self.btn_dl.setEnabled(True)
         self.pbar.hide()
@@ -279,7 +291,10 @@ class MainWindow(QMainWindow):
             
         self.current_res = res
         self.duration_ms = int(res.duration_sec * 1000)
-        self.save_history(self.url_combo.currentText().split(" (")[0], res.title)
+        self.save_history(self.last_url, res.title)
+        
+        # 💡 핵심: 히스토리 갱신 후, 저장해둔 URL을 주소창에 다시 강제로 표시
+        self.url_combo.setCurrentText(self.last_url)
         
         viewport_width = self.scroll.viewport().width()
         self.waveform.setMinimumWidth(viewport_width)
