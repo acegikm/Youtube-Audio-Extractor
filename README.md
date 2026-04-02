@@ -1,6 +1,6 @@
 # ![App Icon](icon.ico) YouTube Audio Extractor Pro
 
-[English Version](#english-version) | [한국어 버전](#한국어-버전)
+[English Version](#1-overview) | [한국어 버전](#1-개요)
 
 ---
 ### 1. Overview
